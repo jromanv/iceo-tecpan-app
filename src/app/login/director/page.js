@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
+import { loginUser } from '@/lib/supabaseClient'
 
 export default function LoginDirector() {
   const router = useRouter()
@@ -18,97 +18,142 @@ export default function LoginDirector() {
     setLoading(true)
 
     try {
-      // TODO: Aquí irá la lógica de Supabase
+      const usuario = await loginUser(formData.email, formData.password, 'director')
       
-      // Simular delay de red
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Guardar datos en localStorage (temporal)
-      localStorage.setItem('userEmail', formData.email)
-      localStorage.setItem('userPlan', 'ambos') // Director siempre ve ambos
+      localStorage.setItem('userEmail', usuario.email)
+      localStorage.setItem('userPlan', 'ambos')
+      localStorage.setItem('userName', usuario.nombre)
       localStorage.setItem('userType', 'director')
       localStorage.setItem('isAuthenticated', 'true')
       
-      // Redirigir al dashboard
       router.push('/dashboard/director')
     } catch (err) {
-      setError('Error al iniciar sesión. Verifica tus credenciales.')
+      setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100">
-      <Header title="Acceso Director" />
-      
-      <div className="container mx-auto px-4 py-12 flex justify-center">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="bg-[#570020] text-white py-6 shadow-xl">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center gap-4">
+            <img 
+              src="/logo-liceo.png" 
+              alt="Liceo Tecpán" 
+              className="w-16 h-16 md:w-20 md:h-20 object-contain bg-white rounded-full p-2"
+            />
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold">Liceo Tecpán</h1>
+              <p className="text-sm md:text-base text-gray-200">Portal de Director</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <div className="container mx-auto px-4 py-12 md:py-20 flex items-center justify-center min-h-[calc(100vh-120px)]">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
+          {/* Icono */}
+          <div className="text-center mb-10">
+            <div className="w-24 h-24 bg-[#570020] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800">Panel de Director</h2>
-            <p className="text-gray-600">Gestión del Liceo Tecpán</p>
+            <h2 className="text-3xl font-bold text-[#570020] mb-2">Iniciar Sesión</h2>
+            <p className="text-gray-600">Panel de Director</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correo Electrónico *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Correo Electrónico
               </label>
-              <input
-                type="email"
-                placeholder="director@liceotecpan.edu.gt"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </div>
+                <input
+                  type="email"
+                  placeholder="director@liceotecpan.edu.gt"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
+                  required
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Contraseña
               </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
+                  required
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-[#570020] text-white py-4 rounded-xl hover:bg-[#6d0028] transition font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              {loading ? 'Ingresando...' : 'Ingresar al Panel'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Ingresando...
+                </span>
+              ) : 'Ingresar al Panel'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-red-600 hover:underline">
-              ← Volver al inicio
+          <div className="mt-8 text-center">
+            <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#570020] transition font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver al inicio
             </a>
           </div>
 
           {/* Datos de prueba */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 font-semibold mb-2">Datos de prueba:</p>
-            <p className="text-xs text-gray-600">📧 Email: director@liceotecpan.edu.gt</p>
-            <p className="text-xs text-gray-600">🔑 Contraseña: director123</p>
+          <div className="mt-8 p-4 bg-gradient-to-br from-gray-50 to-red-50 rounded-xl border border-gray-200">
+            <p className="text-xs font-bold text-gray-700 mb-2">Credenciales de prueba:</p>
+            <div className="space-y-1 text-xs text-gray-600">
+              <p><span className="font-semibold">Email:</span> director@liceotecpan.edu.gt</p>
+              <p><span className="font-semibold">Contraseña:</span> director123</p>
+            </div>
           </div>
         </div>
       </div>

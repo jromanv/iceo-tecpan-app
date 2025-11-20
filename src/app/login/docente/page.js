@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
 import { loginUser } from '@/lib/supabaseClient'
 
 export default function LoginDocente() {
@@ -19,17 +18,14 @@ export default function LoginDocente() {
     setLoading(true)
 
     try {
-      // Hacer login y obtener datos del usuario desde la BD
       const usuario = await loginUser(formData.email, formData.password, 'docente')
       
-      // Guardar datos en localStorage
       localStorage.setItem('userEmail', usuario.email)
-      localStorage.setItem('userPlan', usuario.plan) // Plan viene de la BD (diario/fin_de_semana/ambos)
+      localStorage.setItem('userPlan', usuario.plan)
       localStorage.setItem('userName', usuario.nombre)
       localStorage.setItem('userType', 'docente')
       localStorage.setItem('isAuthenticated', 'true')
       
-      // Redirigir al dashboard
       router.push('/dashboard/docente')
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.')
@@ -39,79 +35,128 @@ export default function LoginDocente() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <Header title="Acceso Docentes" />
-      
-      <div className="container mx-auto px-4 py-12 flex justify-center">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="bg-[#570020] text-white py-6 shadow-xl">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center gap-4">
+            <img 
+              src="/logo-liceo.png" 
+              alt="Liceo Tecpán" 
+              className="w-16 h-16 md:w-20 md:h-20 object-contain bg-white rounded-full p-2"
+            />
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold">Liceo Tecpán</h1>
+              <p className="text-sm md:text-base text-gray-200">Portal de Docentes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido */}
+      <div className="container mx-auto px-4 py-12 md:py-20 flex items-center justify-center min-h-[calc(100vh-120px)]">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12 max-w-md w-full">
+          {/* Icono */}
+          <div className="text-center mb-10">
+            <div className="w-24 h-24 bg-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800">Iniciar Sesión</h2>
+            <h2 className="text-3xl font-bold text-emerald-600 mb-2">Iniciar Sesión</h2>
             <p className="text-gray-600">Portal de Docentes</p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+              </div>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correo Electrónico *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Correo Electrónico
               </label>
-              <input
-                type="email"
-                placeholder="docente@liceotecpan.edu.gt"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  </svg>
+                </div>
+                <input
+                  type="email"
+                  placeholder="docente@liceotecpan.edu.gt"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Contraseña
               </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 text-white py-4 rounded-xl hover:bg-emerald-700 transition font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              {loading ? 'Ingresando...' : 'Ingresar'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Ingresando...
+                </span>
+              ) : 'Ingresar'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-green-600 hover:underline">
-              ← Volver al inicio
+          <div className="mt-8 text-center">
+            <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-emerald-600 transition font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Volver al inicio
             </a>
           </div>
 
           {/* Datos de prueba */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 font-semibold mb-2">Datos de prueba:</p>
-            <p className="text-xs text-gray-600">🔄 Ambas: jromanv@liceotecpan.edu.gt</p>
-            <p className="text-xs text-gray-600">📚 Diario: plopez@liceotecpan.edu.gt</p>
-            <p className="text-xs text-gray-600">📅 Fin de Semana: mgarcia@liceotecpan.edu.gt</p>
-            <p className="text-xs text-gray-600">🔑 Contraseña: docente123</p>
-            <p className="text-xs text-green-600 mt-2 italic">* La jornada se detecta automáticamente</p>
+          <div className="mt-8 p-4 bg-gradient-to-br from-gray-50 to-emerald-50 rounded-xl border border-gray-200">
+            <p className="text-xs font-bold text-gray-700 mb-2">Credenciales de prueba:</p>
+            <div className="space-y-1 text-xs text-gray-600">
+              <p><span className="font-semibold">Ambas jornadas:</span> jromanv@liceotecpan.edu.gt</p>
+              <p><span className="font-semibold">Plan Diario:</span> plopez@liceotecpan.edu.gt</p>
+              <p><span className="font-semibold">Fin de Semana:</span> mgarcia@liceotecpan.edu.gt</p>
+              <p><span className="font-semibold">Contraseña:</span> docente123</p>
+            </div>
+            <p className="text-xs text-emerald-600 mt-2 italic">* La jornada se detecta automáticamente</p>
           </div>
         </div>
       </div>

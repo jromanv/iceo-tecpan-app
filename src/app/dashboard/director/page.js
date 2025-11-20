@@ -24,19 +24,17 @@ export default function DashboardDirector() {
   })
 
   useEffect(() => {
-  // Verificar autenticación
-  const isAuth = localStorage.getItem('isAuthenticated')
-  if (!isAuth) {
-    router.push('/login/director')
-    return
-  }
+    const isAuth = localStorage.getItem('isAuthenticated')
+    if (!isAuth) {
+      router.push('/login/director')
+      return
+    }
 
-  const nombre = localStorage.getItem('userName') || ''
-  setUserName(nombre) // Ahora mostrará el nombre completo
+    const nombre = localStorage.getItem('userName') || ''
+    setUserName(nombre)
 
-  // Cargar actividades
-  cargarActividades()
-}, [router])
+    cargarActividades()
+  }, [router])
 
   const cargarActividades = async () => {
     try {
@@ -57,7 +55,6 @@ export default function DashboardDirector() {
     
     try {
       if (actividadEditando) {
-        // Editar actividad existente
         await actualizarActividad(actividadEditando.id, formData)
         setActividades(actividades.map(act => 
           act.id === actividadEditando.id 
@@ -66,13 +63,11 @@ export default function DashboardDirector() {
         ))
         alert('Actividad actualizada correctamente')
       } else {
-        // Crear nueva actividad
         const nuevaActividad = await crearActividad(formData)
         setActividades([...actividades, nuevaActividad])
         alert('Actividad creada correctamente')
       }
       
-      // Limpiar formulario
       setFormData({
         titulo: '',
         fecha: '',
@@ -102,6 +97,7 @@ export default function DashboardDirector() {
     })
     setActividadEditando(actividad)
     setMostrarFormulario(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleEliminar = async (id) => {
@@ -118,28 +114,25 @@ export default function DashboardDirector() {
   }
 
   const handleCerrarSesion = () => {
-    localStorage.removeItem('userPlan')
-    localStorage.removeItem('userType')
-    localStorage.removeItem('userEmail')
-    localStorage.removeItem('isAuthenticated')
+    localStorage.clear()
     router.push('/')
   }
 
   const getTipoColor = (tipo) => {
     switch(tipo) {
-      case 'todos': return 'bg-blue-100 text-blue-800'
-      case 'docentes': return 'bg-green-100 text-green-800'
-      case 'alumnos': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'todos': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'docentes': return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'alumnos': return 'bg-purple-100 text-purple-800 border-purple-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
   const getJornadaColor = (jornada) => {
     switch(jornada) {
-      case 'diario': return 'bg-orange-100 text-orange-800'
-      case 'fin_de_semana': return 'bg-cyan-100 text-cyan-800'
-      case 'ambos': return 'bg-indigo-100 text-indigo-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'diario': return 'bg-orange-100 text-orange-800 border-orange-200'
+      case 'fin_de_semana': return 'bg-cyan-100 text-cyan-800 border-cyan-200'
+      case 'ambos': return 'bg-indigo-100 text-indigo-800 border-indigo-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
@@ -154,14 +147,13 @@ export default function DashboardDirector() {
 
   const getJornadaTexto = (jornada) => {
     switch(jornada) {
-      case 'diario': return 'Diario'
+      case 'diario': return 'Plan Diario'
       case 'fin_de_semana': return 'Fin de Semana'
-      case 'ambos': return 'Ambos'
+      case 'ambos': return 'Ambas Jornadas'
       default: return jornada
     }
   }
 
-  // Filtrar actividades por jornada seleccionada
   const actividadesFiltradas = jornadaVista === 'ambos' 
     ? actividades 
     : actividades.filter(act => act.jornada === jornadaVista || act.jornada === 'ambos')
@@ -170,7 +162,7 @@ export default function DashboardDirector() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#570020] mx-auto mb-4"></div>
           <p className="text-gray-600 font-semibold">Cargando panel de director...</p>
         </div>
       </div>
@@ -181,20 +173,19 @@ export default function DashboardDirector() {
     <div className="min-h-screen bg-gray-50">
       <Header title="Panel de Director" userType="Director" />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Información del usuario */}
-        <div className="mb-6 flex justify-center">
-          <span className="bg-red-600 text-white px-6 py-2 rounded-full font-semibold shadow-lg">
-            👤 Director: {userName}
-          </span>
+      <div className="container mx-auto px-4 py-6">
+        {/* Bienvenida compacta */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 border-l-4 border-[#570020]">
+          <h2 className="text-lg font-bold text-gray-800">Bienvenido/a, {userName}</h2>
+          <p className="text-sm text-gray-600">Gestión de actividades escolares</p>
         </div>
 
-        {/* Selector de vista de jornada */}
-        <div className="mb-6 flex justify-center">
-          <div className="bg-white rounded-lg shadow-md p-2 inline-flex gap-2">
+        {/* Filtros y botón crear */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+          <div className="bg-white rounded-xl shadow-md p-2 inline-flex gap-2">
             <button
               onClick={() => setJornadaVista('ambos')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${
                 jornadaVista === 'ambos'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-700 hover:bg-gray-100'
@@ -204,7 +195,7 @@ export default function DashboardDirector() {
             </button>
             <button
               onClick={() => setJornadaVista('diario')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${
                 jornadaVista === 'diario'
                   ? 'bg-orange-600 text-white'
                   : 'text-gray-700 hover:bg-gray-100'
@@ -214,7 +205,7 @@ export default function DashboardDirector() {
             </button>
             <button
               onClick={() => setJornadaVista('fin_de_semana')}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
+              className={`px-4 py-2 rounded-lg font-semibold transition text-sm ${
                 jornadaVista === 'fin_de_semana'
                   ? 'bg-cyan-600 text-white'
                   : 'text-gray-700 hover:bg-gray-100'
@@ -223,37 +214,7 @@ export default function DashboardDirector() {
               Fin de Semana
             </button>
           </div>
-        </div>
 
-        {/* Estadísticas */}
-        <div className="mb-6 grid md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-3xl font-bold text-gray-800">{actividades.length}</div>
-            <div className="text-sm text-gray-600">Total Actividades</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-3xl font-bold text-orange-600">
-              {actividades.filter(act => act.jornada === 'diario' || act.jornada === 'ambos').length}
-            </div>
-            <div className="text-sm text-gray-600">Plan Diario</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-3xl font-bold text-cyan-600">
-              {actividades.filter(act => act.jornada === 'fin_de_semana' || act.jornada === 'ambos').length}
-            </div>
-            <div className="text-sm text-gray-600">Fin de Semana</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-3xl font-bold text-indigo-600">
-              {actividades.filter(act => act.jornada === 'ambos').length}
-            </div>
-            <div className="text-sm text-gray-600">Ambas Jornadas</div>
-          </div>
-        </div>
-
-        {/* Botón para crear actividad */}
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800">Gestión de Actividades</h2>
           <button
             onClick={() => {
               setMostrarFormulario(!mostrarFormulario)
@@ -267,7 +228,7 @@ export default function DashboardDirector() {
                 descripcion: ''
               })
             }}
-            className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-semibold flex items-center gap-2 shadow-lg"
+            className="bg-[#570020] text-white px-6 py-3 rounded-xl hover:bg-[#6d0028] transition font-semibold flex items-center gap-2 shadow-lg"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -276,37 +237,37 @@ export default function DashboardDirector() {
           </button>
         </div>
 
-        {/* Formulario de crear/editar actividad */}
+        {/* Formulario */}
         {mostrarFormulario && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              {actividadEditando ? 'Editar Actividad' : '➕ Nueva Actividad'}
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-[#570020]">
+            <h3 className="text-xl font-bold text-[#570020] mb-6">
+              {actividadEditando ? 'Editar Actividad' : 'Nueva Actividad'}
             </h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Título de la Actividad *
                   </label>
                   <input
                     type="text"
                     value={formData.titulo}
                     onChange={(e) => setFormData({...formData, titulo: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                     placeholder="Ej: Inicio de Clases"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Para quién es *
                   </label>
                   <select
                     value={formData.tipo}
                     onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                     required
                   >
                     <option value="todos">Para Todos</option>
@@ -316,13 +277,13 @@ export default function DashboardDirector() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Jornada / Plan *
                   </label>
                   <select
                     value={formData.jornada}
                     onChange={(e) => setFormData({...formData, jornada: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                     required
                   >
                     <option value="ambos">Ambas Jornadas</option>
@@ -332,40 +293,40 @@ export default function DashboardDirector() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Fecha *
                   </label>
                   <input
                     type="date"
                     value={formData.fecha}
                     onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Hora *
                   </label>
                   <input
                     type="time"
                     value={formData.hora}
                     onChange={(e) => setFormData({...formData, hora: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Descripción
                 </label>
                 <textarea
                   value={formData.descripcion}
                   onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#570020] focus:border-transparent transition"
                   rows="3"
                   placeholder="Descripción opcional de la actividad"
                 ></textarea>
@@ -375,7 +336,7 @@ export default function DashboardDirector() {
                 <button
                   type="submit"
                   disabled={guardando}
-                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="bg-[#570020] text-white px-8 py-3 rounded-xl hover:bg-[#6d0028] transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
                   {guardando ? 'Guardando...' : (actividadEditando ? 'Guardar Cambios' : 'Crear Actividad')}
                 </button>
@@ -385,7 +346,7 @@ export default function DashboardDirector() {
                     setMostrarFormulario(false)
                     setActividadEditando(null)
                   }}
-                  className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition font-semibold"
+                  className="bg-gray-200 text-gray-700 px-8 py-3 rounded-xl hover:bg-gray-300 transition font-semibold"
                 >
                   Cancelar
                 </button>
@@ -395,35 +356,38 @@ export default function DashboardDirector() {
         )}
 
         {/* Lista de actividades */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-6">
             Actividades Registradas ({actividadesFiltradas.length})
           </h3>
           
           {actividadesFiltradas.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">
-              No hay actividades registradas para esta jornada.
-            </p>
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p className="text-gray-500 font-medium">No hay actividades registradas para esta jornada</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {actividadesFiltradas
                 .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
                 .map((actividad) => (
-                <div key={actividad.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div key={actividad.id} className="border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition hover:border-[#570020]">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <div className="flex items-center gap-3 mb-3 flex-wrap">
                         <h4 className="text-lg font-bold text-gray-800">{actividad.titulo}</h4>
-                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${getTipoColor(actividad.tipo)}`}>
+                        <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${getTipoColor(actividad.tipo)}`}>
                           {getTipoTexto(actividad.tipo)}
                         </span>
-                        <span className={`text-xs px-3 py-1 rounded-full font-semibold ${getJornadaColor(actividad.jornada)}`}>
+                        <span className={`text-xs px-3 py-1 rounded-full font-semibold border ${getJornadaColor(actividad.jornada)}`}>
                           {getJornadaTexto(actividad.jornada)}
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <span className="flex items-center gap-1">
+                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
+                        <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -435,7 +399,7 @@ export default function DashboardDirector() {
                           })}
                         </span>
                         
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
@@ -444,7 +408,7 @@ export default function DashboardDirector() {
                       </div>
                       
                       {actividad.descripcion && (
-                        <p className="text-sm text-gray-600">{actividad.descripcion}</p>
+                        <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{actividad.descripcion}</p>
                       )}
                     </div>
 
@@ -476,11 +440,11 @@ export default function DashboardDirector() {
           )}
         </div>
 
-        {/* Botón de cerrar sesión */}
+        {/* Botón cerrar sesión */}
         <div className="mt-8 text-center">
           <button 
             onClick={handleCerrarSesion}
-            className="bg-red-600 text-white px-8 py-3 rounded-lg hover:bg-red-700 transition font-semibold shadow-lg"
+            className="bg-[#570020] text-white px-8 py-3 rounded-xl hover:bg-[#6d0028] transition font-semibold shadow-lg"
           >
             Cerrar Sesión
           </button>

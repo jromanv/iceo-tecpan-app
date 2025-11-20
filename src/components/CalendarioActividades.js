@@ -1,122 +1,132 @@
-export default function CalendarioActividades({ actividades, userType }) {
-  // Filtrar actividades según el tipo de usuario
-  const actividadesFiltradas = actividades.filter(act => {
-    if (act.tipo === 'todos') return true
-    if (userType === 'alumno' && act.tipo === 'alumnos') return true
-    if (userType === 'docente' && act.tipo === 'docentes') return true
-    return false
-  })
+'use client'
+import { useState } from 'react'
 
-  const getTipoColor = (tipo) => {
-    switch(tipo) {
-      case 'todos': return 'border-l-blue-500 bg-blue-50'
-      case 'docentes': return 'border-l-green-500 bg-green-50'
-      case 'alumnos': return 'border-l-purple-500 bg-purple-50'
-      default: return 'border-l-gray-500 bg-gray-50'
+export default function CalendarioMensual({ actividades, userType }) {
+  const [mesActual, setMesActual] = useState(new Date())
+
+  const obtenerDiasDelMes = (fecha) => {
+    const año = fecha.getFullYear()
+    const mes = fecha.getMonth()
+    const primerDia = new Date(año, mes, 1)
+    const ultimoDia = new Date(año, mes + 1, 0)
+    const diasDelMes = []
+
+    const diaSemanaInicio = primerDia.getDay()
+    const diasSemanaAnteriores = diaSemanaInicio === 0 ? 6 : diaSemanaInicio - 1
+
+    for (let i = diasSemanaAnteriores; i > 0; i--) {
+      const diaAnterior = new Date(año, mes, -i + 1)
+      diasDelMes.push({ fecha: diaAnterior, esDelMes: false })
     }
+
+    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+      diasDelMes.push({ fecha: new Date(año, mes, dia), esDelMes: true })
+    }
+
+    const totalDias = diasDelMes.length
+    const diasFaltantes = totalDias % 7 === 0 ? 0 : 7 - (totalDias % 7)
+    for (let i = 1; i <= diasFaltantes; i++) {
+      diasDelMes.push({ fecha: new Date(año, mes + 1, i), esDelMes: false })
+    }
+
+    return diasDelMes
   }
 
-  const getTipoTexto = (tipo) => {
-    switch(tipo) {
-      case 'todos': return 'General'
-      case 'docentes': return 'Docentes'
-      case 'alumnos': return 'Alumnos'
-      default: return tipo
-    }
+  const mesAnterior = () => {
+    setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1))
   }
 
-  // Agrupar actividades por mes
-  const actividadesPorMes = actividadesFiltradas.reduce((acc, act) => {
-    const fecha = new Date(act.fecha + 'T00:00:00')
-    const mesAno = fecha.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })
-    
-    if (!acc[mesAno]) {
-      acc[mesAno] = []
-    }
-    acc[mesAno].push(act)
-    return acc
-  }, {})
+  const mesSiguiente = () => {
+    setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1))
+  }
+
+  const obtenerActividadesDia = (fecha) => {
+    const fechaStr = fecha.toISOString().split('T')[0]
+    return actividades.filter(act => {
+      if (act.fecha === fechaStr) {
+        if (userType === 'director') return true
+        if (userType === 'docente') return act.tipo === 'todos' || act.tipo === 'docentes'
+        if (userType === 'alumno') return act.tipo === 'todos' || act.tipo === 'alumnos'
+      }
+      return false
+    })
+  }
+
+  const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+  const dias = obtenerDiasDelMes(mesActual)
+  const nombreMes = mesActual.toLocaleDateString('es-GT', { month: 'long', year: 'numeric' })
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
 
   return (
-    <div className="space-y-6">
-      {Object.keys(actividadesPorMes).length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <div className="bg-white rounded-xl shadow-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={mesAnterior}
+          className="p-2 hover:bg-gray-100 rounded-lg transition"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <p className="text-gray-600">No hay actividades programadas</p>
-        </div>
-      ) : (
-        Object.keys(actividadesPorMes)
-          .sort((a, b) => {
-            const [mesA, anoA] = a.split(' de ')
-            const [mesB, anoB] = b.split(' de ')
-            return new Date(anoA, getMesNumero(mesA)) - new Date(anoB, getMesNumero(mesB))
-          })
-          .map((mesAno) => (
-          <div key={mesAno} className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 capitalize">
-              {mesAno}
-            </h3>
-            
-            <div className="space-y-3">
-              {actividadesPorMes[mesAno]
-                .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
-                .map((actividad) => (
-                <div 
-                  key={actividad.id} 
-                  className={`border-l-4 ${getTipoColor(actividad.tipo)} p-4 rounded-r-lg`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-bold text-gray-800 mb-1">
-                        {actividad.titulo}
-                      </h4>
-                      
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {new Date(actividad.fecha + 'T00:00:00').toLocaleDateString('es-GT', { 
-                            weekday: 'long', 
-                            day: 'numeric'
-                          })}
-                        </span>
-                        
-                        <span className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {actividad.hora}
-                        </span>
-                      </div>
-                      
-                      {actividad.descripcion && (
-                        <p className="text-sm text-gray-600 mb-2">{actividad.descripcion}</p>
-                      )}
-                      
-                      <span className="inline-block text-xs font-semibold text-gray-600">
-                        {getTipoTexto(actividad.tipo)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        </button>
+
+        <h2 className="text-lg font-bold text-gray-800 capitalize">{nombreMes}</h2>
+
+        <button
+          onClick={mesSiguiente}
+          className="p-2 hover:bg-gray-100 rounded-lg transition"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {diasSemana.map(dia => (
+          <div key={dia} className="text-center text-xs font-bold text-gray-600 py-2">
+            {dia}
           </div>
-        ))
-      )}
+        ))}
+
+        {dias.map((dia, index) => {
+          const actividadesDia = obtenerActividadesDia(dia.fecha)
+          const esHoy = dia.fecha.getTime() === hoy.getTime()
+
+          return (
+            <div
+              key={index}
+              className={`min-h-[70px] border rounded-lg p-1 transition ${
+                !dia.esDelMes
+                  ? 'bg-gray-50 text-gray-400'
+                  : esHoy
+                  ? 'bg-blue-100 border-blue-400'
+                  : 'bg-white hover:bg-gray-50'
+              }`}
+            >
+              <div className={`text-xs font-semibold mb-1 ${esHoy ? 'text-blue-700' : 'text-gray-700'}`}>
+                {dia.fecha.getDate()}
+              </div>
+              <div className="space-y-1">
+                {actividadesDia.slice(0, 2).map((act, i) => (
+                  <div
+                    key={i}
+                    className="text-[10px] bg-[#570020] text-white px-1 py-0.5 rounded truncate"
+                    title={act.titulo}
+                  >
+                    {act.titulo}
+                  </div>
+                ))}
+                {actividadesDia.length > 2 && (
+                  <div className="text-[9px] text-gray-500 font-semibold">
+                    +{actividadesDia.length - 2} más
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
-}
-
-// Función auxiliar para convertir nombre de mes a número
-function getMesNumero(mes) {
-  const meses = {
-    'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3,
-    'mayo': 4, 'junio': 5, 'julio': 6, 'agosto': 7,
-    'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
-  }
-  return meses[mes.toLowerCase()] || 0
 }
