@@ -1,152 +1,149 @@
-// Este archivo estará listo para Supabase
-// Por ahora contiene funciones simuladas
+// Mock data - datos de prueba
+let actividadesMock = [
+  { id: 1, titulo: 'Inicio de Clases', fecha: '2025-01-15', hora: '08:00', tipo: 'todos', jornada: 'ambos', descripcion: 'Bienvenida e introducción al año escolar' },
+  { id: 2, titulo: 'Reunión Docentes Plan Diario', fecha: '2025-01-20', hora: '14:00', tipo: 'docentes', jornada: 'diario', descripcion: 'Planificación trimestral' },
+  { id: 3, titulo: 'Examen Parcial', fecha: '2025-02-10', hora: '09:00', tipo: 'alumnos', jornada: 'fin_de_semana', descripcion: 'Evaluación primer parcial' }
+]
 
-// TODO: Descomentar cuando tengamos Supabase configurado
-// import { supabase } from './supabase'
+let usuariosMock = [
+  { id: 1, codigo: 'DIR001', nombre: 'María González', email: 'director@liceotecpan.edu.gt', password: 'director123', rol: 'director', plan: 'ambos' },
+  { id: 2, codigo: 'DOC001', nombre: 'José Román', email: 'jromanv@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'ambos' },
+  { id: 3, codigo: 'DOC002', nombre: 'Pedro López', email: 'plopez@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'diario' },
+  { id: 4, codigo: 'DOC003', nombre: 'María García', email: 'mgarcia@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'fin_de_semana' },
+  { id: 5, codigo: 'ALU001', nombre: 'Carlos Pérez', email: 'alu001@liceotecpan.edu.gt', password: 'alumno123', rol: 'alumno', plan: 'diario' },
+  { id: 6, codigo: 'ALU002', nombre: 'Ana Martínez', email: 'alu002@liceotecpan.edu.gt', password: 'alumno123', rol: 'alumno', plan: 'fin_de_semana' }
+]
 
-// Función de login (simulada)
-export async function loginUser(email, password, userType) {
-  // TODO: Reemplazar con lógica real de Supabase
-  
-  // Por ahora simulamos la búsqueda en base de datos
-  const usuariosPrueba = {
-    'director@liceotecpan.edu.gt': { 
-      password: 'director123', 
-      rol: 'director', 
-      plan: 'ambos',
-      nombre: 'María González'
-    },
-    'jromanv@liceotecpan.edu.gt': { 
-      password: 'docente123', 
-      rol: 'docente', 
-      plan: 'ambos',
-      nombre: 'Juan Román'
-    },
-    'plopez@liceotecpan.edu.gt': { 
-      password: 'docente123', 
-      rol: 'docente', 
-      plan: 'diario',
-      nombre: 'Pedro López'
-    },
-    'mgarcia@liceotecpan.edu.gt': { 
-      password: 'docente123', 
-      rol: 'docente', 
-      plan: 'fin_de_semana',
-      nombre: 'María García'
-    },
-    'alu001@liceotecpan.edu.gt': { 
-      password: 'alumno123', 
-      rol: 'alumno', 
-      plan: 'diario',
-      nombre: 'Carlos Pérez'
-    },
-    'alu002@liceotecpan.edu.gt': { 
-      password: 'alumno123', 
-      rol: 'alumno', 
-      plan: 'fin_de_semana',
-      nombre: 'Ana Martínez'
-    }
+// Simular delay de red
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// ============== FUNCIONES DE ACTIVIDADES ==============
+
+export async function getActividades() {
+  await delay(500)
+  return [...actividadesMock]
+}
+
+export async function crearActividad(actividad) {
+  await delay(500)
+  const nuevaActividad = {
+    ...actividad,
+    id: Math.max(...actividadesMock.map(a => a.id), 0) + 1
   }
+  actividadesMock.push(nuevaActividad)
+  return nuevaActividad
+}
 
-  const usuario = usuariosPrueba[email]
+export async function actualizarActividad(id, actividad) {
+  await delay(500)
+  const index = actividadesMock.findIndex(a => a.id === id)
+  if (index !== -1) {
+    actividadesMock[index] = { ...actividadesMock[index], ...actividad }
+    return actividadesMock[index]
+  }
+  throw new Error('Actividad no encontrada')
+}
+
+export async function eliminarActividad(id) {
+  await delay(500)
+  actividadesMock = actividadesMock.filter(a => a.id !== id)
+  return { success: true }
+}
+
+// ============== FUNCIONES DE USUARIOS ==============
+
+export async function getUsuarios() {
+  await delay(500)
+  // No devolver las contraseñas en la lista
+  return usuariosMock.map(({ password, ...usuario }) => usuario)
+}
+
+export async function crearUsuario(usuario) {
+  await delay(500)
   
-  if (!usuario || usuario.password !== password || usuario.rol !== userType) {
+  // Verificar si el email ya existe
+  if (usuariosMock.some(u => u.email === usuario.email)) {
+    throw new Error('El correo electrónico ya está registrado')
+  }
+  
+  // Verificar si el código ya existe
+  if (usuariosMock.some(u => u.codigo === usuario.codigo)) {
+    throw new Error('El código personal ya está registrado')
+  }
+  
+  const nuevoUsuario = {
+    ...usuario,
+    id: Math.max(...usuariosMock.map(u => u.id), 0) + 1
+  }
+  usuariosMock.push(nuevoUsuario)
+  
+  // No devolver la contraseña
+  const { password, ...usuarioSinPassword } = nuevoUsuario
+  return usuarioSinPassword
+}
+
+export async function actualizarUsuario(id, usuario) {
+  await delay(500)
+  const index = usuariosMock.findIndex(u => u.id === id)
+  
+  if (index === -1) {
+    throw new Error('Usuario no encontrado')
+  }
+  
+  // Verificar si el email ya existe en otro usuario
+  if (usuario.email && usuariosMock.some(u => u.id !== id && u.email === usuario.email)) {
+    throw new Error('El correo electrónico ya está registrado')
+  }
+  
+  // Verificar si el código ya existe en otro usuario
+  if (usuario.codigo && usuariosMock.some(u => u.id !== id && u.codigo === usuario.codigo)) {
+    throw new Error('El código personal ya está registrado')
+  }
+  
+  // Si no se proporciona password, mantener el anterior
+  const datosActualizar = { ...usuario }
+  if (!usuario.password || usuario.password === '') {
+    delete datosActualizar.password
+  }
+  
+  usuariosMock[index] = { ...usuariosMock[index], ...datosActualizar }
+  
+  // No devolver la contraseña
+  const { password, ...usuarioSinPassword } = usuariosMock[index]
+  return usuarioSinPassword
+}
+
+export async function eliminarUsuario(id) {
+  await delay(500)
+  
+  // No permitir eliminar al director principal
+  const usuario = usuariosMock.find(u => u.id === id)
+  if (usuario && usuario.rol === 'director') {
+    throw new Error('No se puede eliminar al director del sistema')
+  }
+  
+  usuariosMock = usuariosMock.filter(u => u.id !== id)
+  return { success: true }
+}
+
+// ============== FUNCIÓN DE LOGIN ==============
+
+export async function loginUser(email, password, tipoEsperado) {
+  await delay(800)
+  
+  const usuario = usuariosMock.find(
+    u => u.email === email && u.password === password
+  )
+
+  if (!usuario) {
     throw new Error('Credenciales incorrectas')
   }
 
-  return {
-    email,
-    rol: usuario.rol,
-    plan: usuario.plan,
-    nombre: usuario.nombre
+  if (usuario.rol !== tipoEsperado) {
+    throw new Error(`Este usuario no tiene acceso como ${tipoEsperado}`)
   }
-}
 
-// Función para obtener actividades (simulada)
-export async function getActividades() {
-  // TODO: Reemplazar con query real de Supabase
-  
-  return [
-    {
-      id: 1,
-      titulo: 'Inicio de Clases',
-      fecha: '2026-01-15',
-      hora: '08:00',
-      tipo: 'todos',
-      jornada: 'diario',
-      descripcion: 'Inicio del ciclo escolar 2026 - Plan Diario'
-    },
-    {
-      id: 2,
-      titulo: 'Reunión de Docentes',
-      fecha: '2026-01-16',
-      hora: '15:00',
-      tipo: 'docentes',
-      jornada: 'ambos',
-      descripcion: 'Planificación del primer bimestre'
-    },
-    {
-      id: 3,
-      titulo: 'Inicio Fin de Semana',
-      fecha: '2026-01-18',
-      hora: '08:00',
-      tipo: 'todos',
-      jornada: 'fin_de_semana',
-      descripcion: 'Inicio de clases Plan Fin de Semana'
-    },
-    {
-      id: 4,
-      titulo: 'Examen de Matemáticas',
-      fecha: '2026-01-20',
-      hora: '09:00',
-      tipo: 'alumnos',
-      jornada: 'diario',
-      descripcion: 'Examen del primer bimestre - Plan Diario'
-    },
-    {
-      id: 5,
-      titulo: 'Taller de Computación',
-      fecha: '2026-01-25',
-      hora: '10:00',
-      tipo: 'alumnos',
-      jornada: 'fin_de_semana',
-      descripcion: 'Taller práctico - Plan Fin de Semana'
-    },
-    {
-      id: 6,
-      titulo: 'Día de la Paz',
-      fecha: '2026-01-30',
-      hora: '08:00',
-      tipo: 'todos',
-      jornada: 'ambos',
-      descripcion: 'Celebración para ambos planes'
-    }
-  ]
-}
-
-// Función para crear actividad (simulada)
-export async function crearActividad(actividadData) {
-  // TODO: Reemplazar con insert real de Supabase
-  
-  console.log('Crear actividad:', actividadData)
-  return {
-    ...actividadData,
-    id: Date.now()
-  }
-}
-
-// Función para actualizar actividad (simulada)
-export async function actualizarActividad(id, actividadData) {
-  // TODO: Reemplazar con update real de Supabase
-  
-  console.log('Actualizar actividad:', id, actividadData)
-  return actividadData
-}
-
-// Función para eliminar actividad (simulada)
-export async function eliminarActividad(id) {
-  // TODO: Reemplazar con delete real de Supabase
-  
-  console.log('Eliminar actividad:', id)
-  return true
+  // No devolver la contraseña
+  const { password: _, ...usuarioSinPassword } = usuario
+  return usuarioSinPassword
 }

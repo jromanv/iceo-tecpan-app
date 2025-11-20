@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
+import Sidebar from '@/components/Sidebar'
 import CalendarioMensual from '@/components/CalendarioMensual'
 import { getActividades } from '@/lib/supabaseClient'
 
@@ -9,8 +10,10 @@ export default function DashboardAlumno() {
   const router = useRouter()
   const [userPlan, setUserPlan] = useState('diario')
   const [userName, setUserName] = useState('')
+  const [userEmail, setUserEmail] = useState('')
   const [actividades, setActividades] = useState([])
   const [loading, setLoading] = useState(true)
+  const [seccionActiva, setSeccionActiva] = useState('calendario')
 
   useEffect(() => {
     const isAuth = localStorage.getItem('isAuthenticated')
@@ -21,9 +24,11 @@ export default function DashboardAlumno() {
 
     const plan = localStorage.getItem('userPlan') || 'diario'
     const nombre = localStorage.getItem('userName') || ''
+    const email = localStorage.getItem('userEmail') || ''
     
     setUserPlan(plan)
     setUserName(nombre)
+    setUserEmail(email)
 
     cargarActividades()
   }, [router])
@@ -87,29 +92,99 @@ export default function DashboardAlumno() {
     return `EN ${dias} DÍAS`
   }
 
-  const handleCerrarSesion = () => {
-    localStorage.clear()
-    router.push('/')
+  const renderContenido = () => {
+    switch(seccionActiva) {
+      case 'calendario':
+        return renderCalendario()
+      case 'horario':
+        return renderProximamente('Mi Horario')
+      case 'perfil':
+        return renderPerfil()
+      default:
+        return renderProximamente('Esta sección')
+    }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-semibold">Cargando actividades...</p>
+  const renderProximamente = (titulo) => (
+    <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+      <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+      <h3 className="text-2xl font-bold text-gray-800 mb-2">{titulo}</h3>
+      <p className="text-gray-600">Esta funcionalidad estará disponible próximamente</p>
+    </div>
+  )
+
+  const renderPerfil = () => (
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Mi Perfil</h2>
+      
+      <div className="space-y-6">
+        {/* Información personal */}
+        <div className="border-2 border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Información Personal</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
+              <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                {userName}
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Correo Electrónico</label>
+              <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                {userEmail}
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Plan de Estudios</label>
+              <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200 text-blue-800 font-semibold">
+                {getPlanNombre(userPlan)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="border-2 border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Estadísticas</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-3xl font-bold text-blue-600">{actividadesFiltradas.length}</div>
+              <div className="text-sm text-gray-600 mt-1">Actividades Totales</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-3xl font-bold text-green-600">
+                {actividadesFiltradas.filter(act => {
+                  const fechaAct = new Date(act.fecha + 'T00:00:00')
+                  const hoy = new Date()
+                  hoy.setHours(0, 0, 0, 0)
+                  return fechaAct >= hoy
+                }).length}
+              </div>
+              <div className="text-sm text-gray-600 mt-1">Próximas</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nota */}
+        <div className="border-2 border-gray-200 rounded-xl p-6 bg-gray-50">
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Nota</h3>
+          <p className="text-sm text-gray-600">
+            Para actualizar tu información personal o cambiar tu contraseña, contacta con la administración del centro educativo.
+          </p>
         </div>
       </div>
-    )
-  }
+    </div>
+  )
 
-  const actividadesProximas = obtenerActividadesProximas()
+  const renderCalendario = () => {
+    const actividadesProximas = obtenerActividadesProximas()
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Header title="Portal de Alumno" userType="Alumno" />
-      
-      <div className="container mx-auto px-4 py-6">
+    return (
+      <>
         {/* Bienvenida compacta */}
         <div className="bg-white rounded-xl shadow-md p-4 mb-4 border-l-4 border-blue-600">
           <div className="flex items-center justify-between">
@@ -206,16 +281,35 @@ export default function DashboardAlumno() {
             </div>
           )}
         </div>
+      </>
+    )
+  }
 
-        {/* Botón cerrar sesión */}
-        <div className="mt-6 text-center">
-          <button 
-            onClick={handleCerrarSesion}
-            className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition font-semibold shadow-lg"
-          >
-            Cerrar Sesión
-          </button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-semibold">Cargando actividades...</p>
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Header title="Portal de Alumno" userType="Alumno" />
+      
+      <div className="flex">
+        <Sidebar 
+          userType="alumno" 
+          activeSection={seccionActiva}
+          onSectionChange={setSeccionActiva}
+        />
+        
+        <main className="flex-1 lg:ml-64 p-6 pt-20">
+          {renderContenido()}
+        </main>
       </div>
     </div>
   )

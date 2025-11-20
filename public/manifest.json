@@ -1,12 +1,12 @@
 {
-  "name": "Liceo Tecpán - Sistema Educativo",
+  "name": "Liceo Tecpán - Sistema de Gestión Educativa",
   "short_name": "Liceo Tecpán",
-  "description": "Sistema de gestión educativa para alumnos, docentes y directivos",
+  "description": "Sistema de gestión de actividades escolares para Liceo Tecpán",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4F46E5",
-  "orientation": "portrait",
+  "background_color": "#570020",
+  "theme_color": "#570020",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -20,5 +20,8 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "es-GT",
+  "dir": "ltr"
 }
