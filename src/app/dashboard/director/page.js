@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
-import { getActividades, crearActividad, actualizarActividad, eliminarActividad } from '@/lib/supabaseClient'
+import { getActividades, crearActividad, actualizarActividad, eliminarActividad, getUsuarios, crearUsuario } from '@/lib/supabaseClient'
 
 export default function DashboardDirector() {
   const router = useRouter()
@@ -55,16 +55,31 @@ export default function DashboardDirector() {
   }, [router])
 
   const cargarDatos = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const [dataActividades, dataUsuarios] = await Promise.all([
-        getActividades(),
-        getUsuarios()
-      ])
-      setActividades(dataActividades)
-      setUsuarios(dataUsuarios)
+      console.log('🔄 Iniciando carga de datos...')
+      
+      // Cargar actividades
+      try {
+        const dataActividades = await getActividades()
+        console.log('✅ Actividades cargadas:', dataActividades)
+        setActividades(dataActividades)
+      } catch (error) {
+        console.error('❌ Error al cargar actividades:', error)
+        alert('Error al cargar las actividades. Por favor revisa la consola.')
+      }
+
+      // Cargar usuarios (independiente)
+      try {
+        const dataUsuarios = await getUsuarios()
+        console.log('✅ Usuarios cargados:', dataUsuarios)
+        setUsuarios(dataUsuarios)
+      } catch (error) {
+        console.error('❌ Error al cargar usuarios:', error)
+      }
+
     } catch (error) {
-      console.error('Error al cargar datos:', error)
+      console.error('Error general al cargar datos:', error)
     } finally {
       setLoading(false)
     }
@@ -113,13 +128,8 @@ export default function DashboardDirector() {
     
     try {
       if (usuarioEditando) {
-        await actualizarUsuario(usuarioEditando.id, formUsuario)
-        setUsuarios(usuarios.map(user => 
-          user.id === usuarioEditando.id 
-            ? { ...formUsuario, id: user.id }
-            : user
-        ))
-        alert('Usuario actualizado correctamente')
+        // await actualizarUsuario(usuarioEditando.id, formUsuario)
+        alert('Función de actualizar usuario pendiente de implementar')
       } else {
         const nuevoUsuario = await crearUsuario(formUsuario)
         setUsuarios([...usuarios, nuevoUsuario])
@@ -189,9 +199,10 @@ export default function DashboardDirector() {
     if (!confirm('¿Estás seguro de eliminar este usuario?')) return
     
     try {
-      await eliminarUsuario(id)
-      setUsuarios(usuarios.filter(user => user.id !== id))
-      alert('Usuario eliminado correctamente')
+      // await eliminarUsuario(id)
+      alert('Función de eliminar usuario pendiente de implementar')
+      // setUsuarios(usuarios.filter(user => user.id !== id))
+      // alert('Usuario eliminado correctamente')
     } catch (error) {
       console.error('Error al eliminar usuario:', error)
       alert('Error al eliminar el usuario')
@@ -866,7 +877,7 @@ export default function DashboardDirector() {
           onSectionChange={setSeccionActiva}
         />
         
-        <main className="flex-1 lg:ml-64 p-6 pt-20">
+        <main className="flex-1 p-6 pt-20">
           {renderContenido()}
         </main>
       </div>

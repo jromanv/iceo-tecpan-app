@@ -307,7 +307,7 @@ export default function DashboardAlumno() {
           onSectionChange={setSeccionActiva}
         />
         
-        <main className="flex-1 lg:ml-64 p-6 pt-20">
+        <main className="flex-1 p-6 pt-20">
           {renderContenido()}
         </main>
       </div>
