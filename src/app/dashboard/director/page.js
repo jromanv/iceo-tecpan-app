@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
-import { getActividades, crearActividad, actualizarActividad, eliminarActividad, getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario } from '@/lib/supabaseClient'
+import { getActividades, crearActividad, actualizarActividad, eliminarActividad } from '@/lib/supabaseClient'
 
 export default function DashboardDirector() {
   const router = useRouter()

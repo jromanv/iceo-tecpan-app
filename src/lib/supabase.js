@@ -1,14 +1,20 @@
-// Este archivo se configurará cuando tengamos las credenciales de Supabase
-// Por ahora está vacío y listo para recibir la configuración
-
-/*
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'TU_PROJECT_URL_AQUI'
-const supabaseAnonKey = 'TU_ANON_KEY_AQUI'
+// Obtener las credenciales desde las variables de entorno
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-*/
+// Verificar que las credenciales estén configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('⚠️ Faltan credenciales de Supabase en .env.local')
+  console.error('URL:', supabaseUrl)
+  console.error('Key:', supabaseAnonKey ? 'Configurada' : 'Falta')
+}
 
-// Placeholder mientras configuramos Supabase
-export const supabase = null
+// Crear y exportar el cliente de Supabase
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+})

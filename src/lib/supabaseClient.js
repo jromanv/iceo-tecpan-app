@@ -1,149 +1,265 @@
-// Mock data - datos de prueba
-let actividadesMock = [
-  { id: 1, titulo: 'Inicio de Clases', fecha: '2025-01-15', hora: '08:00', tipo: 'todos', jornada: 'ambos', descripcion: 'Bienvenida e introducción al año escolar' },
-  { id: 2, titulo: 'Reunión Docentes Plan Diario', fecha: '2025-01-20', hora: '14:00', tipo: 'docentes', jornada: 'diario', descripcion: 'Planificación trimestral' },
-  { id: 3, titulo: 'Examen Parcial', fecha: '2025-02-10', hora: '09:00', tipo: 'alumnos', jornada: 'fin_de_semana', descripcion: 'Evaluación primer parcial' }
-]
+import { supabase } from './supabase'
 
-let usuariosMock = [
-  { id: 1, codigo: 'DIR001', nombre: 'María González', email: 'director@liceotecpan.edu.gt', password: 'director123', rol: 'director', plan: 'ambos' },
-  { id: 2, codigo: 'DOC001', nombre: 'José Román', email: 'jromanv@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'ambos' },
-  { id: 3, codigo: 'DOC002', nombre: 'Pedro López', email: 'plopez@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'diario' },
-  { id: 4, codigo: 'DOC003', nombre: 'María García', email: 'mgarcia@liceotecpan.edu.gt', password: 'docente123', rol: 'docente', plan: 'fin_de_semana' },
-  { id: 5, codigo: 'ALU001', nombre: 'Carlos Pérez', email: 'alu001@liceotecpan.edu.gt', password: 'alumno123', rol: 'alumno', plan: 'diario' },
-  { id: 6, codigo: 'ALU002', nombre: 'Ana Martínez', email: 'alu002@liceotecpan.edu.gt', password: 'alumno123', rol: 'alumno', plan: 'fin_de_semana' }
-]
+// ================================================
+// FUNCIONES DE AUTENTICACIÓN
+// ================================================
 
-// Simular delay de red
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+/**
+ * Función de login - Autentica al usuario y verifica su rol
+ * @param {string} email - Email del usuario
+ * @param {string} password - Contraseña en texto plano
+ * @param {string} userType - Tipo de usuario esperado (director/docente/alumno)
+ * @returns {Object} Datos del usuario autenticado
+ */
+export async function loginUser(email, password, userType) {
+  try {
+    console.log('🔐 Intentando login:', email, userType)
+    
+    // 1. Buscar el usuario en la base de datos por email
+    const { data: usuario, error: dbError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('email', email)
+      .single()
 
-// ============== FUNCIONES DE ACTIVIDADES ==============
+    if (dbError || !usuario) {
+      console.error('❌ Usuario no encontrado:', dbError)
+      throw new Error('Credenciales incorrectas')
+    }
 
+    console.log('✅ Usuario encontrado:', usuario.nombre)
+
+    // 2. Verificar que el rol coincida
+    if (usuario.rol !== userType) {
+      console.error('❌ Rol incorrecto. Esperado:', userType, 'Recibido:', usuario.rol)
+      throw new Error('No tienes permisos para acceder a este portal')
+    }
+
+    // 3. Verificar la contraseña usando pgcrypto de PostgreSQL
+    const { data: passwordCheck, error: passwordError } = await supabase
+      .rpc('verify_password', {
+        user_email: email,
+        user_password: password
+      })
+
+    if (passwordError) {
+      console.error('❌ Error al verificar contraseña:', passwordError)
+      throw new Error('Credenciales incorrectas')
+    }
+
+    if (!passwordCheck) {
+      console.error('❌ Contraseña incorrecta')
+      throw new Error('Credenciales incorrectas')
+    }
+
+    console.log('✅ Login exitoso para:', usuario.nombre)
+
+    // 4. Retornar los datos del usuario (sin el hash de contraseña)
+    return {
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      rol: usuario.rol,
+      plan: usuario.plan
+    }
+
+  } catch (error) {
+    console.error('❌ Error en login:', error)
+    throw error
+  }
+}
+
+// ================================================
+// FUNCIONES PARA ACTIVIDADES
+// ================================================
+
+/**
+ * Obtener todas las actividades
+ * @returns {Array} Lista de actividades ordenadas por fecha
+ */
 export async function getActividades() {
-  await delay(500)
-  return [...actividadesMock]
-}
+  try {
+    console.log('📅 Obteniendo actividades...')
+    
+    const { data, error } = await supabase
+      .from('actividades')
+      .select('*')
+      .order('fecha', { ascending: true })
+      .order('hora', { ascending: true })
 
-export async function crearActividad(actividad) {
-  await delay(500)
-  const nuevaActividad = {
-    ...actividad,
-    id: Math.max(...actividadesMock.map(a => a.id), 0) + 1
+    if (error) {
+      console.error('❌ Error al obtener actividades:', error)
+      throw new Error('Error al cargar las actividades')
+    }
+
+    console.log('✅ Actividades obtenidas:', data?.length || 0)
+    return data || []
+  } catch (error) {
+    console.error('❌ Error en getActividades:', error)
+    throw error
   }
-  actividadesMock.push(nuevaActividad)
-  return nuevaActividad
 }
 
-export async function actualizarActividad(id, actividad) {
-  await delay(500)
-  const index = actividadesMock.findIndex(a => a.id === id)
-  if (index !== -1) {
-    actividadesMock[index] = { ...actividadesMock[index], ...actividad }
-    return actividadesMock[index]
+/**
+ * Crear una nueva actividad
+ * @param {Object} actividadData - Datos de la actividad
+ * @returns {Object} Actividad creada
+ */
+export async function crearActividad(actividadData) {
+  try {
+    console.log('➕ Creando actividad:', actividadData.titulo)
+    
+    const { data, error } = await supabase
+      .from('actividades')
+      .insert([
+        {
+          titulo: actividadData.titulo,
+          fecha: actividadData.fecha,
+          hora: actividadData.hora,
+          tipo: actividadData.tipo,
+          jornada: actividadData.jornada,
+          descripcion: actividadData.descripcion || ''
+        }
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Error al crear actividad:', error)
+      throw new Error('Error al crear la actividad')
+    }
+
+    console.log('✅ Actividad creada:', data.id)
+    return data
+  } catch (error) {
+    console.error('❌ Error en crearActividad:', error)
+    throw error
   }
-  throw new Error('Actividad no encontrada')
 }
 
+/**
+ * Actualizar una actividad existente
+ * @param {string} id - ID de la actividad
+ * @param {Object} actividadData - Nuevos datos de la actividad
+ * @returns {Object} Actividad actualizada
+ */
+export async function actualizarActividad(id, actividadData) {
+  try {
+    console.log('✏️ Actualizando actividad:', id)
+    
+    const { data, error } = await supabase
+      .from('actividades')
+      .update({
+        titulo: actividadData.titulo,
+        fecha: actividadData.fecha,
+        hora: actividadData.hora,
+        tipo: actividadData.tipo,
+        jornada: actividadData.jornada,
+        descripcion: actividadData.descripcion || ''
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Error al actualizar actividad:', error)
+      throw new Error('Error al actualizar la actividad')
+    }
+
+    console.log('✅ Actividad actualizada:', data.id)
+    return data
+  } catch (error) {
+    console.error('❌ Error en actualizarActividad:', error)
+    throw error
+  }
+}
+
+/**
+ * Eliminar una actividad
+ * @param {string} id - ID de la actividad a eliminar
+ * @returns {boolean} true si se eliminó correctamente
+ */
 export async function eliminarActividad(id) {
-  await delay(500)
-  actividadesMock = actividadesMock.filter(a => a.id !== id)
-  return { success: true }
+  try {
+    console.log('🗑️ Eliminando actividad:', id)
+    
+    const { error } = await supabase
+      .from('actividades')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('❌ Error al eliminar actividad:', error)
+      throw new Error('Error al eliminar la actividad')
+    }
+
+    console.log('✅ Actividad eliminada:', id)
+    return true
+  } catch (error) {
+    console.error('❌ Error en eliminarActividad:', error)
+    throw error
+  }
 }
 
-// ============== FUNCIONES DE USUARIOS ==============
+// ================================================
+// FUNCIONES PARA USUARIOS (PARA USO FUTURO)
+// ================================================
 
+/**
+ * Obtener todos los usuarios (solo para directores)
+ * @returns {Array} Lista de usuarios
+ */
 export async function getUsuarios() {
-  await delay(500)
-  // No devolver las contraseñas en la lista
-  return usuariosMock.map(({ password, ...usuario }) => usuario)
+  try {
+    console.log('👥 Obteniendo usuarios...')
+    
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, email, nombre, rol, plan, created_at')
+      .order('nombre', { ascending: true })
+
+    if (error) {
+      console.error('❌ Error al obtener usuarios:', error)
+      throw new Error('Error al cargar los usuarios')
+    }
+
+    console.log('✅ Usuarios obtenidos:', data?.length || 0)
+    return data || []
+  } catch (error) {
+    console.error('❌ Error en getUsuarios:', error)
+    throw error
+  }
 }
 
-export async function crearUsuario(usuario) {
-  await delay(500)
-  
-  // Verificar si el email ya existe
-  if (usuariosMock.some(u => u.email === usuario.email)) {
-    throw new Error('El correo electrónico ya está registrado')
-  }
-  
-  // Verificar si el código ya existe
-  if (usuariosMock.some(u => u.codigo === usuario.codigo)) {
-    throw new Error('El código personal ya está registrado')
-  }
-  
-  const nuevoUsuario = {
-    ...usuario,
-    id: Math.max(...usuariosMock.map(u => u.id), 0) + 1
-  }
-  usuariosMock.push(nuevoUsuario)
-  
-  // No devolver la contraseña
-  const { password, ...usuarioSinPassword } = nuevoUsuario
-  return usuarioSinPassword
-}
+/**
+ * Crear un nuevo usuario (para registro futuro)
+ * @param {Object} userData - Datos del usuario
+ * @returns {Object} Usuario creado
+ */
+export async function crearUsuario(userData) {
+  try {
+    console.log('➕ Creando usuario:', userData.email)
+    
+    // Verificar que la función verify_password existe antes de crear usuario
+    // porque usaremos la misma lógica para hashear
+    const { data, error } = await supabase
+      .rpc('create_user_with_password', {
+        user_email: userData.email,
+        user_password: userData.password,
+        user_nombre: userData.nombre,
+        user_rol: userData.rol,
+        user_plan: userData.plan
+      })
 
-export async function actualizarUsuario(id, usuario) {
-  await delay(500)
-  const index = usuariosMock.findIndex(u => u.id === id)
-  
-  if (index === -1) {
-    throw new Error('Usuario no encontrado')
-  }
-  
-  // Verificar si el email ya existe en otro usuario
-  if (usuario.email && usuariosMock.some(u => u.id !== id && u.email === usuario.email)) {
-    throw new Error('El correo electrónico ya está registrado')
-  }
-  
-  // Verificar si el código ya existe en otro usuario
-  if (usuario.codigo && usuariosMock.some(u => u.id !== id && u.codigo === usuario.codigo)) {
-    throw new Error('El código personal ya está registrado')
-  }
-  
-  // Si no se proporciona password, mantener el anterior
-  const datosActualizar = { ...usuario }
-  if (!usuario.password || usuario.password === '') {
-    delete datosActualizar.password
-  }
-  
-  usuariosMock[index] = { ...usuariosMock[index], ...datosActualizar }
-  
-  // No devolver la contraseña
-  const { password, ...usuarioSinPassword } = usuariosMock[index]
-  return usuarioSinPassword
-}
+    if (error) {
+      console.error('❌ Error al crear usuario:', error)
+      throw new Error('Error al crear el usuario')
+    }
 
-export async function eliminarUsuario(id) {
-  await delay(500)
-  
-  // No permitir eliminar al director principal
-  const usuario = usuariosMock.find(u => u.id === id)
-  if (usuario && usuario.rol === 'director') {
-    throw new Error('No se puede eliminar al director del sistema')
+    console.log('✅ Usuario creado:', data)
+    return data
+  } catch (error) {
+    console.error('❌ Error en crearUsuario:', error)
+    throw error
   }
-  
-  usuariosMock = usuariosMock.filter(u => u.id !== id)
-  return { success: true }
-}
-
-// ============== FUNCIÓN DE LOGIN ==============
-
-export async function loginUser(email, password, tipoEsperado) {
-  await delay(800)
-  
-  const usuario = usuariosMock.find(
-    u => u.email === email && u.password === password
-  )
-
-  if (!usuario) {
-    throw new Error('Credenciales incorrectas')
-  }
-
-  if (usuario.rol !== tipoEsperado) {
-    throw new Error(`Este usuario no tiene acceso como ${tipoEsperado}`)
-  }
-
-  // No devolver la contraseña
-  const { password: _, ...usuarioSinPassword } = usuario
-  return usuarioSinPassword
 }
